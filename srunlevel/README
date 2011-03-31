@@ -1,0 +1,9 @@
+srunlevel - is a script for use in slackware to change default runlevel
+
+==========================================================================
+USAGE : 
+Login as root and Copy srunlevel file to /sbin directory then run `srunlevel`
+==========================================================================
+
+              Written by Mehdi Esmaeelpour
+        www.slack-world.com/ariarat | ariarat@gmail.com

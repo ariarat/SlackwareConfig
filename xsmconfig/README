@@ -1,0 +1,11 @@
+xsmconfig is a script to change default graphical login manager in slackware and slackware based systems.
+
+==========================================================================
+USAGE:
+
+login as root &  copy xsmconfig file to /usr/sbin and run `xsmconfig` command as root.
+==========================================================================
+
+
+            Written by Mehdi Esmaeelpour
+        www.slack-world.com/ariarat | ariarat@gmail.com

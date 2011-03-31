@@ -1,0 +1,13 @@
+sampconfig is a script to enable PHP on HTTP server and run both HTTP and MYSQL server
+
+SAMP = Slackware - Apache - Mysql - Php
+
+==========================================================================
+USAGE:
+
+login as root &  copy sampconfig file to /usr/sbin and run `sampconfig` command as root.
+==========================================================================
+
+
+            Written by Mehdi Esmaeelpour
+        www.slack-world.com/ariarat | ariarat@gmail.com

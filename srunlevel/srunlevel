@@ -1,0 +1,45 @@
+#!/bin/sh
+# Copyright 2010  Mehdi Esmaeelpour  |  ariarat@gamil.com  |  www.slack-world.com/ariarat
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+TMP=/tmp
+if [ ! -d $TMP ]; then
+ mkdir -p $TMP
+fi
+
+dialog --backtitle "Setting system default runlevel in /etc/inittab" --title "SELECT YOUR FAVORITE RUNLEVEL" --menu "Please select your runlevel from the following list : 
+" 8 74 0 1 "Runlevel 1 : single user mode" 2 "Runlevel 2 : unused (but configured the same as runlevel 3)" 3 "Runlevel 3 : multiuser mode (default Slackware runlevel)" 4 "Runlevel 4 : X11 with KDM/GDM/XDM (session managers)" 5 "Runlevel 5 : unused (but configured the same as runlevel 3)" 2> $TMP/temp_choose_runlevel
+
+if [ $? = 1 -o $? = 255 ]; then
+    echo "Canceled."
+    rm -f $TMP/temp_choose_runlevel.txt
+    exit 1
+fi
+
+run_level=$(cat $TMP/temp_choose_runlevel)
+
+cat /etc/inittab > $TMP/temp_inittab
+
+
+sed 's/id:[0-6]:initdefault:/'id:"$run_level":initdefault:'/' < $TMP/temp_inittab > /etc/inittab
+
+rm -f $TMP/temp_choose_runlevel $TMP/temp_inittab
+exit 0

@@ -1,0 +1,166 @@
+#!/bin/sh
+# Copyright 2010  Mehdi Esmaeelpour  |  ariarat@gamil.com  |  www.slack-world.com/ariarat
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+TMP=/root/.xsmconfig
+if [ ! -d $TMP ]; then
+	mkdir -p $TMP
+fi
+
+rm -f $TMP/tempscript.sh
+
+
+cat /etc/inittab | grep initdefault | cut -d":" -f2-2 > $TMP/temp_run_level
+
+run_level=$(cat $TMP/temp_run_level)
+
+if [ "$run_level" != "4" ];then
+	
+dialog --title "YOUR RUNLEVEL IS NOT 4" --yesno "Your runlevel is *$run_level*.do you want to change your runlevel to use graphical login managers :
+
+YES : Change your runlevel to 4 and continue.
+NO : Continue without changing your runlevel (ESC)" 12 74
+if [ $? = 0 ]; then
+   cat /etc/inittab > $TMP/temp_inittab
+   sed 's/id:[0-6]:initdefault:/id:4:initdefault:/' < $TMP/temp_inittab > /etc/inittab
+   dialog --msgbox "Your runlevel change to 4.press ENTER to start main script to chnage your default graphical login manager." 8 74
+   rm -f $TMP/temp_inittab
+fi
+fi
+	
+cat << EOF > $TMP/tempscript.sh
+#!/bin/sh
+dialog --backtitle "Setting system default graphical login manager" --title "SELECT YOUR FAVORITE GRAPHICAL LOGIN MANAGER" --menu \\
+"Please select your favorite graphical login manager from the following list : " 12 55 0 \\
+EOF
+if [ -f /usr/sbin/gdm ] || [ -f /usr/bin/gdm ]; then
+  echo "\"GDM\" \"GNOME's gdm session manager\" \\" >> $TMP/tempscript.sh
+fi
+if [ -f /usr/bin/kdm ]; then
+  echo "\"KDM\" \"KDE's kdm session manager\" \\" >> $TMP/tempscript.sh
+fi
+if [ -f /usr/sbin/lxdm ]; then
+  echo "\"LXDM\" \"LXDE's lxdm session manager \" \\" >> $TMP/tempscript.sh
+fi
+if [ -f /usr/bin/xdm ] || [ -f /usr/X11R6/bin/xdm ]; then
+  echo "\"XDM\" \"X's xdm session manager \" \\" >> $TMP/tempscript.sh
+fi
+cat << EOF >> $TMP/tempscript.sh
+2> $TMP/default_select
+if [ ! \$? = 0 ]; then
+    rm -f $TMP/default_select
+    echo "Canceled."
+    exit
+fi
+EOF
+
+sh $TMP/tempscript.sh
+if [ ! -r $TMP/default_select ]; then
+	rm -f $TMP/tempscript.sh $TMP/temp_run_level
+	exit
+fi
+
+RESULT_OF_SELECT=$(cat $TMP/default_select)
+case "$RESULT_OF_SELECT" in
+  GDM ) 
+     if [ -f /usr/sbin/gdm ] && ! [ -x /usr/sbin/gdm ]; then
+       chmod +x /usr/sbin/gdm
+     fi
+     if [ -f /usr/bin/gdm ] && ! [ -x /usr/bin/gdm ]; then
+       chmod +x /usr/bin/gdm
+     fi
+     if [ -f /usr/bin/kdm ] && [ -x /usr/bin/kdm ]; then
+       chmod -x /usr/bin/kdm
+     fi
+     if [ -f /usr/sbin/lxdm ] && [ -x /usr/sbin/lxdm ]; then
+       chmod -x /usr/sbin/lxdm
+     fi
+     if [ -f /usr/bin/xdm ] && [ -x /usr/bin/xdm ]; then
+       chmod -x /usr/bin/xdm
+     fi
+     if [ -f /usr/X11R6/bin/xdm ] && [ -x /usr/X11R6/bin/xdm ]; then
+       chmod -x /usr/X11R6/bin/xdm
+     fi
+     ;;
+  KDM ) 
+     if [ -f /usr/sbin/gdm ] && [ -x /usr/sbin/gdm ]; then
+       chmod -x /usr/sbin/gdm
+     fi
+     if [ -f /usr/bin/gdm ] && [ -x /usr/bin/gdm ]; then
+       chmod -x /usr/bin/gdm
+     fi
+     if [ -f /usr/bin/kdm ] && ! [ -x /usr/bin/kdm ]; then
+       chmod +x /usr/bin/kdm
+     fi
+     if [ -f /usr/sbin/lxdm ] && [ -x /usr/sbin/lxdm ]; then
+       chmod -x /usr/sbin/lxdm
+     fi
+     if [ -f /usr/bin/xdm ] && [ -x /usr/bin/xdm ]; then
+       chmod -x /usr/bin/xdm
+     fi
+     if [ -f /usr/X11R6/bin/xdm ] && [ -x /usr/X11R6/bin/xdm ]; then
+       chmod -x /usr/X11R6/bin/xdm
+     fi
+     ;;
+  LXDM )
+     if [ -f /usr/sbin/gdm ] && [ -x /usr/sbin/gdm ]; then
+       chmod -x /usr/sbin/gdm
+     fi
+     if [ -f /usr/bin/gdm ] && [ -x /usr/bin/gdm ]; then
+       chmod -x /usr/bin/gdm
+     fi
+     if [ -f /usr/bin/kdm ] && [ -x /usr/bin/kdm ]; then
+       chmod -x /usr/bin/kdm
+     fi
+     if [ -f /usr/sbin/lxdm ] && ! [ -x /usr/sbin/lxdm ]; then
+       chmod +x /usr/sbin/lxdm
+     fi
+     if [ -f /usr/bin/xdm ] && [ -x /usr/bin/xdm ]; then
+       chmod -x /usr/bin/xdm
+     fi
+     if [ -f /usr/X11R6/bin/xdm ] && [ -x /usr/X11R6/bin/xdm ]; then
+       chmod -x /usr/X11R6/bin/xdm
+     fi
+     ;; 
+  XDM ) 
+     if [ -f /usr/sbin/gdm ] && [ -x /usr/sbin/gdm ]; then
+       chmod -x /usr/sbin/gdm
+     fi
+     if [ -f /usr/bin/gdm ] && [ -x /usr/bin/gdm ]; then
+       chmod -x /usr/bin/gdm
+     fi
+     if [ -f /usr/bin/kdm ] && [ -x /usr/bin/kdm ]; then
+       chmod -x /usr/bin/kdm
+     fi
+     if [ -f /usr/sbin/lxdm ] && [ -x /usr/sbin/lxdm ]; then
+       chmod -x /usr/sbin/lxdm
+     fi
+     if [ -f /usr/bin/xdm ] && ! [ -x /usr/bin/xdm ]; then
+       chmod +x /usr/bin/xdm
+     fi
+     if [ -f /usr/X11R6/bin/xdm ] && ! [ -x /usr/X11R6/bin/xdm ]; then
+       chmod +x /usr/X11R6/bin/xdm
+     fi
+     ;;
+esac
+     
+rm -f $TMP/temp_run_level $TMP/tempscript.sh $TMP/default_select
+exit 0

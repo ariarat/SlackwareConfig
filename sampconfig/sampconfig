@@ -1,0 +1,148 @@
+#!/bin/sh
+# Copyright 2010  Mehdi Esmaeelpour  |  ariarat@gamil.com  |  www.slack-world.com/ariarat
+# All rights reserved.
+#
+# Redistribution and use of this script, with or without modification, is
+# permitted provided that the following conditions are met:
+#
+# 1. Redistributions of this script must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#
+#  THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+#  WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+#  EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+#  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+#  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+#  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+#  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+#  ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+TMP=/root/.sampconfig
+if [ ! -d $TMP ]; then
+mkdir -p $TMP
+fi
+rm -f $TMP/temp_httpd $TMP/number_of_argument $TMP/dir_index_result $TMP/mod_php_result
+
+dialog --title "SAMPCONFIG" --yesno "Sampconfig is a configurator script that enable PHP and run HTTP and MYSQL server in slackware.
+
+
+Select YES to start script or NO to end script." 10 74
+if [ $? = 1 -o $? = 255 ]; then
+    echo "Canceled."
+    exit 1
+fi
+
+echo -n "Checking HTTP server state ..."
+if [ -f /var/run/httpd/httpd.pid ]; then
+      sleep 3
+      echo "  ok"
+      echo -n "Stopping server ..."
+      /etc/rc.d/rc.httpd stop > /dev/null 2>&1
+      sleep 3
+      echo "  ok"
+else
+      sleep 3
+      echo "  ok"
+fi
+
+echo -n "Modify httpd.conf to enable PHP support ..."  
+
+set $(grep "DirectoryIndex index.html" /etc/httpd/httpd.conf)
+
+_number_of_argument=$#
+
+eval x='$'$_number_of_argument
+
+while [ "$_number_of_argument" -ge "2" ]
+  do
+      if [ "$x" = "index.php" ]; then
+         echo 1 > $TMP/dir_index_result
+      fi
+      let _number_of_argument--
+      eval x='$'$_number_of_argument
+  done
+
+if [ ! -f $TMP/dir_index_result ]; then
+      echo 0 > $TMP/dir_index_result
+fi
+
+grep -x "#Include /etc/httpd/mod_php.conf" /etc/httpd/httpd.conf > /dev/null
+echo $? > $TMP/mod_php_result
+
+if [ $(cat $TMP/dir_index_result) -eq 0 ]; then
+    cat /etc/httpd/httpd.conf > $TMP/temp_httpd
+    dir_index_string=$(grep "DirectoryIndex index.html" /etc/httpd/httpd.conf)
+    dir_index_new_string="$dir_index_string index.php"
+    sed 's/'"$dir_index_string"'/'"$dir_index_new_string"'/' < $TMP/temp_httpd > /etc/httpd/httpd.conf
+fi
+
+if [ $(cat $TMP/mod_php_result) -eq 0 ]; then
+    cat /etc/httpd/httpd.conf > $TMP/temp_httpd
+    sed 's/#Include \/etc\/httpd\/mod_php.conf/Include \/etc\/httpd\/mod_php.conf/' < $TMP/temp_httpd > /etc/httpd/httpd.conf
+fi
+sleep 3
+echo "  ok"
+echo -n "Checking rc.httpd file permission ..."
+if [ ! -x /etc/rc.d/rc.httpd ]; then
+    chmod +x /etc/rc.d/rc.httpd
+fi
+sleep 3
+echo "  ok"
+echo -n "Starting HTTP server ..."
+/etc/rc.d/rc.httpd start > /dev/null 2>&1
+sleep 3
+echo "  ok"
+
+if [ -f /var/run/mysql/mysql.pid ]; then
+    echo "MYSQL server already running."
+    sleep 3
+else
+    dialog --yesno "Did you installed MYSQL default databases before this?" 8 74
+    if [ $? = 1 -o $? = 255 ];then
+      echo -n "Installing MYSQL default databases ..."
+      mysql_install_db > /dev/null
+      sleep 3
+      echo "  ok"
+    fi
+fi
+if [ ! -x /etc/rc.d/rc.mysqld ]; then
+    echo -n "Changing rc.mysqld permission ..."
+    chmod +x /etc/rc.d/rc.mysqld
+    sleep 3 
+    echo "  ok"
+fi
+if [ ! -f /var/run/mysql/mysql.pid ]; then    
+    set $(ls -l /var/lib | grep mysql)
+    owner_argument=3
+    group_argument=4
+    eval y='$'$owner_argument
+    eval z='$'$group_argument
+    if [ "$y" != "mysql" ]; then
+    echo -n "Changing /var/lib/mysql owner to mysql..."
+    chown -R mysql /var/lib/mysql
+    sleep 3
+    echo "  ok"
+    fi
+    if [ "$z" != "mysql" ]; then
+    echo -n "Changing /var/lib/mysql group owner to mysql..."
+    chgrp -R mysql /var/lib/mysql
+    sleep 3
+    echo "  ok"
+    fi
+    echo -n "Starting MYSQL server ..."
+    /etc/rc.d/rc.mysqld start > /dev/null 2>&1
+    sleep 3
+    echo "  ok"
+fi
+dialog --msgbox "Complete successfully." 8 35
+
+rm -f $TMP/temp_httpd $TMP/number_of_argument $TMP/dir_index_result $TMP/mod_php_result
+
+
+exit 0
+
+
+
